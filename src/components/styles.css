@@ -1,0 +1,62 @@
+
+nav {
+    height: 50px;
+    display: flex;
+    justify-content: space-between;
+    z-index: 10;
+}
+
+Button {
+    color: #ff9933;
+    width: 100px;
+}
+.buttonContainer {
+    display: flex;
+    justify-content: flex-end;
+}
+.currencyButton {
+    width: 50px;
+    height: 25px;
+    margin-left: 10px;
+    font-size: 10px;
+    font-weight: bold;
+    color: #000;
+    background: #fff;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+}
+.currencyButton:active, .currencyButton:hover {
+    border: 1px solid #000;
+    background-color: #fff;
+    transition: all 0.2s ease-in-out;
+    color: #000;
+    outline: none;
+    text-decoration: none;
+}
+.svg1 {
+    fill: #000;
+    fill-opacity: 0.3;
+  }
+  
+  .path1 {
+    stroke: #ff9933;
+    stroke-width: 2px;
+    fill: none;
+  }
+  
+  .axis {
+    stroke: #000;
+  }
+  
+  .axis-labels text {
+    fill: #000;
+    fill-opacity: 0.9;
+    font-size: 12px;
+    text-anchor: middle;
+  }
+  
+  .axis-labels line {
+    stroke: #000;
+  }
+  
