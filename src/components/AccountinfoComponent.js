@@ -4,17 +4,17 @@ import { BsArrowBarUp } from "react-icons/bs";
 import { useRef } from 'react'
 import Papa from 'papaparse'
 import DetailsComponent from './DetailsComponent';
+import * as api from '../api';
 
 
 
 export default function AccountinfoComponent() {
-    const [isUploading, setUploading] = useState(false);
     const [isUploaded, setUploaded] = useState(false);
     const [isActive, setActive] = useState();
     const [isDataUploaded, setDataUploaded] = useState([]);
     const [isAccounts, setAccounts] = useState([]);
-    const  [isTotalBalance, setTotalBalance] = useState([]);
-    const  [isGrossBalance, setGrossBalance] = useState([]);
+    const [isTotalBalance, setTotalBalance] = useState([]);
+    const [isGrossBalance, setGrossBalance] = useState([]);
     const [selectedAccount, setSelectedAccount] = useState([]);
     const account = 'Conto';
     const currencyType = 'Divisa';
@@ -25,21 +25,48 @@ export default function AccountinfoComponent() {
 
     const today = new Date(),
 
-    date =  today.getDate() + '/' + (today.getMonth() + 1) +  '/' + today.getFullYear();
+        date = today.getDate() + '/' + (today.getMonth() + 1) + '/' + today.getFullYear();
     useEffect(() => {
-
+        getCurrencies();
+        getLatestRates();
+        getDailyRates();
         if (isDataUploaded.length) {
             setUploaded(true);
-           
-            getAccounts()
+
+            getAccounts();
+
         }
-    }, [isUploading, isDataUploaded, selectedAccount]);
+    }, [isDataUploaded, selectedAccount,]);
+
+    const getCurrencies = () => {
+        api.fetchCurrency('currencies').then(res => {
+            console.log(res.data.currencies);
+        })
+    }
+
+    const getLatestRates = () => {
+        api.fetchLatestRates('latestRates', 'en').then(res => {
+            console.log(res.data.latestRates)
+        })
+    }
+    const getDailyRates = ()  => {
+        const params = {
+            date:'2021-11-05',
+            baseCurrencyIsoCode: ['INR', 'USD'],
+            currencyIsoCode: 'EUR',
+            lang: 'en',
+        }
+        api.fetchDailyRates('dailyRates', params).then(res => {
+            console.log(res.data.dailyRates);
+        })
+    }
 
     const getAccounts = () => {
+
         const accountArray = [];
-        isDataUploaded.filter(element => {
-            if(!accountArray.some(item => item === element[account]) && element[account] !== undefined) {
-                accountArray.push( element[account])
+        isDataUploaded.forEach(element => {
+            if (!accountArray.some(item => item === element[account]) && element[account] !== undefined) {
+                accountArray.push(element[account])
             }
         });
         setAccounts(accountArray);
@@ -49,14 +76,14 @@ export default function AccountinfoComponent() {
     const handleCard = (e) => {
         const filter = []
         setActive(e.account);
-        isGrossBalance.map(element => {
-            if(element.account === e.account) {
+        isGrossBalance.forEach(element => {
+            if (element.account === e.account) {
 
-                filter.push({'currency': '€', 'amount': element.euro, 'tax': element.eurotax , 'commission': element.eurocommission},{'currency': '$', 'amount': element.usd, 'tax': element.usdtax , 'commission': element.usdcommission});
+                filter.push({ 'currency': '€', 'amount': element.euro, 'tax': element.eurotax, 'commission': element.eurocommission }, { 'currency': '$', 'amount': element.usd, 'tax': element.usdtax, 'commission': element.usdcommission });
             }
             setSelectedAccount(filter)
         })
-        
+
     }
     const calculateBalance = (dataset, accountArray) => {
         let usdCredited = 0;
@@ -69,33 +96,33 @@ export default function AccountinfoComponent() {
         let euroTax = 0;
         const totBalance = [];
         const totGross = [];
-        accountArray.filter(element => {
-            if(element) {
-                dataset.filter(item => {
-                    if(item[account] === element) {
-                        if(item[currencyType] === 'USD') {
+        accountArray.forEach(element => {
+            if (element) {
+                dataset.forEach(item => {
+                    if (item[account] === element) {
+                        if (item[currencyType] === 'USD') {
                             usdCommission = usdCommission + parseInt(Math.abs(item[commission]));
                             usdTax = usdTax + parseInt(Math.abs(item[tax]));
-                            if(item[type] === 'Versamento' || item[type] === 'Vendita') {
+                            if (item[type] === 'Versamento' || item[type] === 'Vendita') {
                                 usdCredited = usdCredited + parseInt(item[net]);
-                            } else if (item[type] === 'Acquisto' || item[type] === 'Prelievo') {
+                            } else {
                                 usdDebited = usdDebited + parseInt(item[net]);
                             }
-                            
-                        } else if(item[currencyType] === 'EUR') {
+
+                        } else if (item[currencyType] === 'EUR') {
                             euroCommission = euroCommission + parseInt(Math.abs(item[commission]));
                             euroTax = euroTax + parseInt(Math.abs(item[tax]));
-                            if(item[type] === 'Versamento' || item[type] === 'Vendita') {
+                            if (item[type] === 'Versamento' || item[type] === 'Vendita') {
                                 euroCredited = euroCredited + parseInt(item[net]);
-                            } else if (item[type] === 'Acquisto' || item[type] === 'Prelievo') {
+                            } else {
                                 euroDebited = euroDebited + parseInt(item[net]);
                             }
-                            
+
                         }
                     }
                 });
-                totBalance.push({'account': element, 'usd': usdCredited - usdDebited, 'euro': euroCredited - euroDebited})
-                totGross.push({'account': element, 'usd': usdCredited + usdDebited + usdTax + usdCommission,'usdtax': usdTax , 'usdcommission': usdCommission, 'euro': euroCredited + euroDebited + euroTax + euroCommission, 'eurotax': euroTax , 'eurocommission': euroCommission})
+                totBalance.push({ 'account': element, 'usd': usdCredited - usdDebited, 'euro': euroCredited - euroDebited })
+                totGross.push({ 'account': element, 'usd': usdCredited + usdDebited + usdTax + usdCommission, 'usdtax': usdTax, 'usdcommission': usdCommission, 'euro': euroCredited + euroDebited + euroTax + euroCommission, 'eurotax': euroTax, 'eurocommission': euroCommission })
             }
         })
         setTotalBalance(totBalance);
@@ -146,21 +173,21 @@ export default function AccountinfoComponent() {
                     </Row>
                 </Container>
                 : <Container>
-                    <h6 style={{ textAlign: 'left', margin: '20px', color: '#808080'}}>YOUR BALANCE</h6>
-                    <div style={{display: 'flex'}}>
-                    {isTotalBalance.map(item => (<div  style={{ width: '20rem', borderRadius: '8px', margin: '15px'}} className={ item.account === isActive ? " active1" : ""} key={item.account} onClick={() => handleCard(item)}>
-                    <Card>
-                        <Card.Body style={{textAlign: 'left'}}>
-                           <Card.Title style={{color: '#ff9933'}}>Account: {item.account}</Card.Title>
-                            <p>Euro balance <br /> <b>€{item.euro}</b></p>
-                            <p>US dollars balance <br /> <b>${item.usd}</b></p>
-                            <p style={{textAlign: 'right'}}>{date}</p>
-                        </Card.Body>
-                    </Card> 
-                    </div>))}
+                    <h6 style={{ textAlign: 'left', margin: '20px', color: '#808080' }}>YOUR BALANCE</h6>
+                    <div style={{ display: 'flex' }}>
+                        {isTotalBalance.map(item => (<div style={{ width: '20rem', borderRadius: '8px', margin: '15px' }} className={item.account === isActive ? " active1" : ""} key={item.account} onClick={() => handleCard(item)}>
+                            <Card>
+                                <Card.Body style={{ textAlign: 'left' }}>
+                                    <Card.Title style={{ color: '#ff9933' }}>Account: {item.account}</Card.Title>
+                                    <p>Euro balance <br /> <b>€{item.euro}</b></p>
+                                    <p>US dollars balance <br /> <b>${item.usd}</b></p>
+                                    <p style={{ textAlign: 'right' }}>{date}</p>
+                                </Card.Body>
+                            </Card>
+                        </div>))}
                     </div>
-                    {selectedAccount.length ? <DetailsComponent  tableData={selectedAccount} /> : null}
-                    
+                    {selectedAccount.length ? <DetailsComponent tableData={selectedAccount} /> : null}
+
                 </Container>
             }
         </div>
